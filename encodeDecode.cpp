@@ -11,6 +11,7 @@ using namespace std;
 
 fstream database("database.txt", ios::in | ios::out | ios::app); //хранится название файла, индексы замены букв, рандомное число и зашифрованный пароль
 
+int charToNumber(int* pass);
 
 int checkKey(int key) {
     if (key == 0 || key == 1)
@@ -119,13 +120,46 @@ int* changeLetter(string pass) {
     return ptr;
 }
 
+//проверка наличия цифры в массиве
+bool checkIntInArray(int* ptrArray, int digit)
+{
+    for (int i = 0; i < SIZEOFPASS; i++)
+    {
+        if (ptrArray[i] == digit)
+            return true;
+    }
 
+    return false;
+}
 
 
 //перестановка
 int* transPosition(int* pass)
 {
-    int changePos[5] = { 2, 0, 3, 4, 1 }; //меняем положение символов в пароле
+    int changePos[5] = { -1, -1, -1, -1, -1 };//меняем положение символов в пароле 
+    int seed = 0;
+    int temp;
+
+    for (int i = 0; i < SIZEOFPASS; i++)
+    {
+        seed = seed + (seed ^ pass[i]);
+    }
+    
+    srand(seed);
+
+    for (int i = 0; i < SIZEOFPASS; i++)
+    {
+        do
+        {
+            temp = rand() % 5;
+        }
+        while (checkIntInArray(changePos, temp));
+        
+        changePos[i] = temp;
+
+        database << changePos[i] << " ";
+    }
+
     static int tempPass[SIZEOFPASS];
     int j;
     for (int i = 0; i < 5; i++)
@@ -138,9 +172,17 @@ int* transPosition(int* pass)
 }
 
 //обратная перестановка
-int* transPositionDecode(int* pass)
+int* transPositionDecode(int* pass, int* changePosArrayPtr)
 {
-    int changePos[5] = { 1, 4, 0, 2, 3 }; //меняем положение символов в пароле
+    int changePos[5] = { -1, -1, -1, -1, -1 };//меняем положение символов в пароле 
+    int temp;
+
+    for (int i = 0; i < SIZEOFPASS; i++)
+    {
+        temp = changePosArrayPtr[i];
+        changePos[temp] = i;
+    }
+
     static int tempPass[SIZEOFPASS];
     int j;
     for (int i = 0; i < 5; i++)
@@ -289,11 +331,13 @@ int main()
             int fileFound = 0;
             string cinFileName;
             static char cinArray[SIZEOFPASS];
+            static int changePosArray[SIZEOFPASS];
             char* cinPtrArray = cinArray;
             int cinRandNumber;
             int cinResult;
             int result;
             int* numberArray;
+            int* changePosArrayPtr = changePosArray;
 
             while (!database.eof())
             {
@@ -307,7 +351,13 @@ int main()
                         database >> cinArray[i];
                     }
 
+                    for (int i = 0; i < SIZEOFPASS; i++)
+                    {
+                        database >> changePosArray[i];
+                    }
+
                     cinPtrArray = cinArray;
+                    changePosArrayPtr = changePosArray;
                     database >> cinRandNumber;
                     database >> cinResult;
                 }
@@ -321,7 +371,7 @@ int main()
                 string countedResult;
                 result = cinResult ^ cinRandNumber;
                 numberArray = numberToArray(result);
-                numberArray = transPositionDecode(numberArray);
+                numberArray = transPositionDecode(numberArray, changePosArrayPtr);
                 countedResult = changeLetterDecode(numberArray, cinPtrArray);
 
                 transform(pass.begin(), pass.end(), pass.begin(), ::tolower);
