@@ -137,14 +137,26 @@ bool checkIntInArray(int* ptrArray, int digit)
 int* transPosition(int* pass)
 {
     int changePos[5] = { -1, -1, -1, -1, -1 };//меняем положение символов в пароле 
-    int seed = 0;
+    long long seed = 0;
     int temp;
+    const int number = 754'125'778; // 4-байтовое число: 00101100 11110011 00001011 11010010
+    int bytes[5]; 
 
+    bytes[0] = (number & 0xFF);
+    bytes[1] = (number & 0xFF00) >> 8;
+    bytes[2] = (number & 0xFF0000) >> 16;
+    bytes[3] = (number & 0xFF000000) >> 24;
+    bytes[4] = (number & 0xFF);
+   
+    
     for (int i = 0; i < SIZEOFPASS; i++)
     {
-        seed = seed + (seed ^ pass[i]);
+        seed = (seed | (pass[i] ^ bytes[i]));
+
+        if (i != (SIZEOFPASS - 1))
+            seed = seed << 8;
     }
-    
+
     srand(seed);
 
     for (int i = 0; i < SIZEOFPASS; i++)
